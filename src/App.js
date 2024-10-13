@@ -1,83 +1,122 @@
-import './App.css';
-import { useEffect, useState } from "react";
-function App() {
+import "./App.css";
+import { useState, useEffect } from "react";
 
-  const [countries, setCountries] = useState([])
-  const [country, setCountry] = useState(null)
-  const [states, setStates] = useState([])
-  const [state, setState] = useState(null)
-  const [cities, setCities] = useState([])
-  const [city, setCity] = useState(null)
+function App() {
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+
+  const [formData, setFormData] = useState({
+    country: "",
+    state: "",
+    city: "",
+  });
 
   useEffect(() => {
+    fetchCountries();
+  }, []);
 
-    const fetchCountries = async () => {
-      try {
-        const res = await fetch("https://crio-location-selector.onrender.com/countries")
-        if (!res.ok) throw new Error(res.status)
-        const data = await res.json()
-        setCountries(data)
-        console.log(data)
-      } catch (error) {
-        console.log(error)
-      }
-    }
+  useEffect(() => {
+    if (!!formData.country) fetchStates();
+    setCities([]);
+  }, [formData.country]);
 
-    fetchCountries()
+  useEffect(() => {
+    if (!!formData.state) fetchCities();
+    setFormData((data) => ({ ...data, city: "" }));
+  }, [formData.state]);
 
-  }, [])
-
-  const handleCountryChange = async (e) => {
-    const countryName = e.target.value
-    setCountry(countryName)
+  const fetchCountries = async () => {
     try {
-      const res = await fetch(`https://crio-location-selector.onrender.com/country=${countryName}/states`)
-      if (!res.ok) throw new Error(res.status)
-      const data = await res.json()
-      setStates(data)
-      console.log(data)
-    } catch (error) {
-      console.log(error)
+      const country = await fetch(
+        `https://crio-location-selector.onrender.com/countries`
+      );
+      const respCountry = await country.json();
+      setCountries(respCountry);
+    } catch (err) {
+      console.log(err.message);
     }
-  }
+  };
 
-  const handleStateChange = async (e) => {
-    const stateName = e.target.value
-    setState(stateName)
+  const fetchStates = async () => {
     try {
-      const res = await fetch(`https://crio-location-selector.onrender.com/country=${country}/state=${stateName}/cities`)
-      if (!res.ok) throw new Error(res.status)
-      const data = await res.json()
-      setCities(data)
-      console.log(data)
-    } catch (error) {
-      console.log(error)
+      const state = await fetch(
+        `https://crio-location-selector.onrender.com/country=${formData.country}/states`
+      );
+      const respState = await state.json();
+      setStates(respState);
+    } catch (err) {
+      console.log(err.message);
     }
-  }
+  };
 
-  const handleCityChange = (e) => {
-    const cityName = e.target.value
-    console.log(country, state, cityName)
-    setCity(cityName)
+  const fetchCities = async () => {
+    try {
+      const city = await fetch(
+        `https://crio-location-selector.onrender.com/country=${formData.country}/state=${formData.state}/cities`
+      );
+      const respCity = await city.json();
+      setCities(respCity);
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
 
-  }
   return (
     <div className="App">
       <h1>Select Location</h1>
-      <select onChange={handleCountryChange}>
-        <option>Select Country</option>
-        {countries.map((country) => <option>{country}</option>)}
-      </select>
-
-      <select disabled={country != null ? false : true} onChange={handleStateChange}>
-        <option>Select State</option>
-        {states.map((state) => <option>{state}</option>)}
-      </select>
-
-      <select disabled={state != null ? false : true} onChange={handleCityChange}>
-        <option>Select City</option>
-        {cities.map((city) => <option>{city}</option>)}</select>
-      <div>{country && state && city && `You selected ${country}, ${state}, ${city}`}</div>
+      <div className="App-data">
+        <select
+          value={formData.country}
+          onChange={(e) => {
+            setFormData((data) => ({ ...data, country: e.target.value }));
+          }}
+        >
+          <option value="" disabled>
+            Select Country
+          </option>
+          {countries.map((country) => (
+            <option key={country} value={country}>
+              {country}
+            </option>
+          ))}
+        </select>
+        <select
+          value={formData.state}
+          onChange={(e) =>
+            setFormData((data) => ({ ...data, state: e.target.value }))
+          }
+        >
+          <option value="" disabled>
+            Select State
+          </option>
+          {states.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
+        <select
+          value={formData.city}
+          onChange={(e) =>
+            setFormData((data) => ({ ...data, city: e.target.value }))
+          }
+        >
+          <option value="" disabled>
+            Select City
+          </option>
+          {cities.map((city) => (
+            <option key={city} value={city}>
+              {city}
+            </option>
+          ))}
+        </select>
+      </div>
+      {!!formData.city && (
+        <p>
+          You selected {formData.city}, {formData.state}, {formData.country}
+        </p>
+      )}
     </div>
   );
 }
